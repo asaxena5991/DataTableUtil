@@ -1,0 +1,171 @@
+<template>
+    <lightning-layout multiple-rows>
+    
+        <lightning-layout-item padding="around-small" size="12">
+            <div class="slds-text-heading_small slds-border_bottom">{label.BenefitsSummaryDescription_Label}</div>
+        </lightning-layout-item>
+    
+        <lightning-layout-item size="12">
+            <lightning-layout class="slds-grid_align-left" multiple-rows>
+                <lightning-layout-item padding="around-small" size="2"> 
+                    <lightning-input type="date" 
+                    name="selectDateForPlan" 
+                    label={label.BenefitsSelectDate_Label}
+                    value={asofDate} 
+                    onchange={handleDateChange}>
+                    </lightning-input>
+                </lightning-layout-item>
+                <lightning-layout-item padding="around-small" size="4"> 
+                    <!--SALESFORCE-10979-->
+                    <lightning-combobox name="listOfCoveredBenefits" 
+                     label={label.BenefitsListofCoveredBenefits_Label}
+                     placeholder = "Please select a Benefit Summary Type"
+                     value={strSummaryCode}
+                     options={benefitOptions} 
+                     onchange={handleCoveredBenefitsChange}>
+                    </lightning-combobox>
+                </lightning-layout-item>
+                <!--SALESFORCE-8560 Using custom multi select picklist component for Benefit Category-->
+                <lightning-layout-item padding="around-small" slds-p-top_medium size="4"> 
+                <template if:true={showCategoryDropdown}>
+                    <c-custom-multiselect-picklist-component
+                        options={benefitCategoryOptions}
+                        label={categoryDropdownLabel} 
+                        value={countvalue}
+                        onselectedvalue={handleCategorySelection}>
+                    </c-custom-multiselect-picklist-component>
+                </template>
+                </lightning-layout-item>  
+                <lightning-layout-item class="slds-p-left_small slds-p-right_small slds-p-top_x-large"
+                            style="margin-top: 4px" size="2">
+                            <lightning-button variant="brand" label="Select" title="Select" onclick={handleBenefitSummarySelectionForQuote}>
+                            </lightning-button>
+                </lightning-layout-item> 
+                <!--SALESFORCE-8560-->
+            </lightning-layout> 
+        </lightning-layout-item>
+    
+        <lightning-layout-item padding="around-small" size="12">
+                <p class="slds-form-element__label" title="Summary Description">Summary Description</p>
+                <p class="slds-p-left_xxx-small"> 
+                        <template if:true={showSubstring}>
+                            <lightning-formatted-text value={charInitial}></lightning-formatted-text>
+                             <a onclick={handleMoreOrLessClick}>{viewMoreOrLessLink}</a> 
+                         </template>
+                        <template if:false={showSubstring}> 
+                            <lightning-formatted-text value={summaryDescription}></lightning-formatted-text>
+                            <a onclick={handleMoreOrLessClick}>{viewMoreOrLessLink}</a>  
+                        </template> 
+                </p>
+        </lightning-layout-item>
+            
+        <lightning-layout-item size="12"> 
+                <!--SALESFORCE-10658-->
+                <lightning-layout-item size="3"  class="slds-p-left_small"  alignment-bump="right"> 
+                    <lightning-button variant="brand" label="Reload Benefits" onclick={reloadBenefits}>
+                    </lightning-button> 
+                </lightning-layout-item>
+                <!--SALESFORCE-10658-->
+                <lightning-accordion allow-multiple-sections-open active-section-name="Benefits">
+                    <lightning-accordion-section name="Benefits" label="Benefits Detail Descriptions">
+                    <lightning-layout-item size="12">
+                        <lightning-layout multiple-rows>
+                            <lightning-layout-item size="12" class="slds-p-bottom_xx-small">
+                                <lightning-layout>
+                                    <lightning-layout-item size="3" alignment-bump="left">
+                                        <lightning-input type="search" variant="label-hidden" label="Quick Search"
+                                            placeholder="Quick Search" value={searchValue} onchange={filterBenefitData}>
+                                        </lightning-input>
+                                    </lightning-layout-item>
+                                </lightning-layout>
+                            </lightning-layout-item>
+    
+                            <lightning-layout-item size="12" padding="around-small">
+                                    
+                                <div if:true={showSpinner}>
+                                        <lightning-spinner variant="brand" 
+                                                            alternative-text="Loading"     
+                                                            size="large" 
+                                                            style="height: 600px;">
+                                        </lightning-spinner>
+                                </div>
+    
+                                <template if:true={benefitDataLoaded}>
+                                    <!--SALESFORCE-10795-->
+                                    <c-benefit-datatable-component
+                                    key-field="id"
+                                    data={pageData} 
+                                    columns={benefitColumns}
+                                    hide-checkbox-column 
+                                    default-sort-direction={util.defaultSortDirection}
+                                    sorted-direction={util.sortDirection} 
+                                    sorted-by={util.sortedBy}
+                                    onsort={handleSort} 
+                                    column-widths-mode="auto">
+                                    </c-benefit-datatable-component> 
+                                 </template>
+    
+                                <template if:true={isError}>
+                                    <lightning-layout-item padding="around-small" size="12">
+                                        <lightning-layout horizontal-align="center">
+                                            <p>
+                                                <lightning-icon icon-name="utility:info" alternative-text="Connected" size="x-small"
+                                                    title="x-small size"></lightning-icon>&nbsp;{error}
+                                            </p>
+                                        </lightning-layout>
+                                    </lightning-layout-item>
+                                </template>
+    
+                                <template if:true={exception}>
+                                    <div class="slds-scoped-notification slds-media slds-media_center slds-theme_error slds-align_absolute-center slds-size_12-of-12" role="status">
+                                        <h2> {exception} </h2>
+                                    </div>
+                                </template>
+                                
+                            </lightning-layout-item>
+                            <!--Show number of records per page-->
+        <lightning-layout-item size="12"> 
+            <template if:true={benefitDataLoaded}>
+            <lightning-layout>
+                <lightning-layout-item size="4" padding="around-small">
+                    <p>Showing {util.startRowNumber} to {util.lastRowNumber} of {util.totalRows} entries</p>
+                    <template if:true={isSearchFilter}>
+                    <p>(Filtered from {benefitData.length} total entries)</p>
+                    </template>
+                </lightning-layout-item>
+                <lightning-layout-item size="4" padding="around-small">
+                    <lightning-button-group>
+                        <lightning-button label="Prev" onclick={prevPage} disabled={util.noPrev}>
+                        </lightning-button>
+                        <lightning-button label={util.currentPage}>
+                        </lightning-button>
+                        <lightning-button label="Next" onclick={nextPage} disabled={util.noNext}>
+                        </lightning-button>
+                    </lightning-button-group>
+                </lightning-layout-item>
+                <lightning-layout-item size="4" padding="around-small" alignment-bump="left">
+                    <lightning-layout>
+                        <lightning-layout-item class="slds-text-align_right slds-var-m-top_small"
+                            alignment-bump="left">
+                            <div>Show</div>
+                        </lightning-layout-item>
+                        <lightning-layout-item>
+                            <lightning-combobox options={rowsPerPageOptions} onchange={changeRowsPerPage}
+                                value={util.rowsPerPageText} variant="label-hidden">
+                            </lightning-combobox>
+                        </lightning-layout-item>
+                        <lightning-layout-item class="slds-text-align_left slds-var-m-top_small">
+                            <div>Per Page</div>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                </lightning-layout-item>
+            </lightning-layout> 
+            </template>
+        </lightning-layout-item>
+        </lightning-layout>
+        </lightning-layout-item>
+        </lightning-accordion-section>
+        </lightning-accordion>
+        </lightning-layout-item> 
+    </lightning-layout> 
+    </template>

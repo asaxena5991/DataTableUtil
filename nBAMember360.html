@@ -1,0 +1,124 @@
+<template>
+    <div class="zoom150">
+    <template if:true={serviceFailure}>
+        <div class="slds-m-left_small slds-text-heading_medium"><strong>{labels.HEADER_LABEL}</strong></div>
+        <lightning-layout>
+            <lightning-layout-item padding="around-small" size="12">
+                <lightning-layout horizontal-align="center">
+                    <p>{failureMessage}</p>
+                </lightning-layout>
+            </lightning-layout-item>
+        </lightning-layout>
+    </template>
+    
+    <template if:true={display}>
+        <lightning-card>
+            <div class="slds-m-left_small slds-text-heading_medium"><strong>{labels.HEADER_LABEL}</strong></div>
+            <template if:true={showCommErrorMsg}>
+                <lightning-layout>
+                    <lightning-layout-item padding="around-small" size="12">
+                        <div class="slds-notify_container slds-is-relative">
+                            <div class="slds-notify slds-notify_toast slds-theme_error" role="status">
+                                <div class="slds-notify__content">
+                                    <h2 class="slds-text-heading_small text-color-white">{labels.NBACOMMRECORDERROR}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </template>
+            <template if:true={noRecord}>
+                <lightning-layout>
+                    <lightning-layout-item padding="around-small" size="12">
+                        <lightning-layout horizontal-align="center">
+                            <p>{labels.NO_DATA}</p>
+                        </lightning-layout>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </template>
+            <template if:false={noRecord}>
+                <lightning-layout multiple-rows>
+                    <lightning-layout-item size="4" padding="around-small">
+                        <lightning-input placeholder="Search" type="Search" onchange={searchHandler} value={keyword}></lightning-input>
+                    </lightning-layout-item>
+                    <template if:true={showMessage}>
+                        <lightning-layout-item size="12" padding="around-small">
+                            <div class="slds-box">
+                                <p class="slds-text-align_center slds-text-color_success slds-text-heading_small">{successMsg}</p>
+                            </div>
+                        </lightning-layout-item>
+                    </template>
+                    <lightning-layout-item size="12" padding="around-small">
+                        <div class="slds-is-relative">
+                            <c-nba-member-360-datatable 
+                                key-field="id" 
+                                data={pageData} 
+                                columns={columns} 
+                                hide-checkbox-column="true"
+                                onsort={handleSort} 
+                                default-sort-direction={util.defaultSortDirection}
+                                sorted-direction={util.sortDirection} 
+                                sorted-by={util.sortedBy}
+                                ontitleclick={titleClickHandler}
+                                onrowaction={handleRowAction}
+                            >
+                            </c-nba-member-360-datatable>
+                            <template if:true={showSpinner}>
+                                <lightning-spinner alternative-text="Loading" size="medium" variant="brand"></lightning-spinner>
+                            </template>
+                        </div>
+                    </lightning-layout-item>
+                    <!--Show number of records per page-->
+                    <lightning-layout-item size="12">
+                        <lightning-layout>
+                            <lightning-layout-item size="4" padding="around-small">
+                                <div>
+                                    <p>Showing {util.startRowNumber} to {util.lastRowNumber} of {util.totalRows} entries</p>
+                                </div>
+                            </lightning-layout-item>
+                            <!--Number of records ends here-->
+                            <!--Button -->
+                            <lightning-layout-item size="4" padding="around-small">
+                                <lightning-layout horizontal-align="center">
+                                    <lightning-layout-item>
+                                        <lightning-button-group>
+                                            <lightning-button label="Prev" onclick={prevPage} disabled={util.noPrev}>
+                                            </lightning-button>
+                                            <template for:each={pageList} for:item="page">
+                                                <lightning-button label={page.num} key={page.num} variant={page.type} onclick={changePage}>
+                                                </lightning-button>
+                                            </template>
+                                            <lightning-button label="Next" onclick={nextPage} disabled={util.noNext}>
+                                            </lightning-button>
+                                        </lightning-button-group>
+                                    </lightning-layout-item>
+                                </lightning-layout>
+                            </lightning-layout-item>
+                            <!--Button ends here-->
+                            <!--Option to choose records per page-->
+                            <lightning-layout-item size="4" padding="around-small" alignment-bump="left">
+                                <template if:false={emptyList}>
+                                    <lightning-layout>
+                                        <lightning-layout-item class="slds-text-align_right slds-p-top_x-small slds-p-right_x-small" alignment-bump="left">
+                                            <div>Show</div>
+                                        </lightning-layout-item>
+                                        <lightning-layout-item>
+                                            <lightning-combobox options={rowsPerPageOptions}
+                                                onchange={changeRowsPerPage} value={util.rowsPerPageText}
+                                                variant="label-hidden">
+                                            </lightning-combobox>
+                                        </lightning-layout-item>
+                                        <lightning-layout-item class="slds-text-align_left slds-p-top_x-small slds-p-left_x-small">
+                                            <div>Per Page</div>
+                                        </lightning-layout-item>
+                                    </lightning-layout>
+                                </template>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </template>
+        </lightning-card>
+    </template>
+    </div>
+</template>

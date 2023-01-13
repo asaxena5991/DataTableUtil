@@ -1,0 +1,138 @@
+<template>
+    <div class="slds-form-element">
+        <template if:true={required}>
+            <label class="slds-form-element__label"><abbr class="slds-required" title="required">* </abbr>{label}</label>
+        </template>
+        <template if:false={required}>
+            <label class="slds-form-element__label">{label}</label>
+        </template>
+        <div class="slds-form-element__control">
+            <div class="slds-combobox_container">
+                <div tabindex="0" class="toggleResultDisplay slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click" aria-expanded="true" aria-haspopup="listbox" onblur={onBlurHandler} onfocus={clearBlurTimeout} role="combobox">
+                    <!--MULTI SELECT MODE-->
+                    <template if:true={allowMultiSelect}>
+                        <!--Input-->
+                        <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_left-right popoverPosSelector" 
+                            role="none">
+                            <lightning-input id="input" value={searchKeyword} onchange={delayedSearch} onfocus={handleOnFocus} onblur={onBlurHandler} variant="label-hidden" aria-autocomplete="list" role="textbox"
+                                autocomplete="off" placeholder="Search..." type="search" class="singleSelectSearch">
+                            </lightning-input>
+                        </div>
+                        <!--Selected Pills-->
+                        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon slds-input-has-icon_left-right" role="none">
+                            <template for:each={selectedItemsPills} for:item="selectedItem">
+                                <span key={selectedItem.value}>
+                                    <lightning-pill label={selectedItem.label} name={selectedItem.value} data-item={selectedItem.value}
+                                        onremove={handleRemoveRecord}>
+                                        <lightning-icon icon-name={iconName}></lightning-icon>
+                                    </lightning-pill>
+                                </span>
+                            </template>                     
+                        </div>
+                    </template>
+                    <!--MULTI SELECT MODE ENDS-->
+                    <!--SINGLE SELECT MODE-->
+                    <template if:false={allowMultiSelect}>
+                        <!--Show Input when record is not selected-->
+                        <template if:false={recordSelected}>
+                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_left-right" role="none">
+                                <lightning-input value={searchKeyword} onchange={delayedSearch} onfocus={handleOnFocus} onblur={onBlurHandler} variant="label-hidden" aria-autocomplete="list" role="textbox"
+                                    autocomplete="off" placeholder="Search..." type="search" class="singleSelectSearch">
+                                </lightning-input>
+                            </div>
+                        </template>
+                        <!--Show Pill when record is selected-->
+                        <template if:true={recordSelected}>
+                        <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_left-right" role="none">
+                            <div class="slds-pill_container">
+                                <lightning-pill class="pillSize100" label={selectedPill.label} name={selectedPill.value} data-item={selectedPill.value} onremove={handleRemoveRecord}>
+                                    <lightning-icon icon-name={iconName}></lightning-icon>
+                                </lightning-pill>
+                            </div>
+                        </div>
+                        </template>
+                    </template>
+                    <!--SINGLE SELECT MODE ENDS-->
+                    <!---Results-->
+                    <div class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid" role="listbox">
+                        <!-- SPINNER -->
+                        <template if:true={displaySpinner}>
+                        <div id="spinner" class="slds-spinner_container" >
+                            <div role="status" class="slds-spinner slds-spinner--small slds-spinner--brand">
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                        </template>
+                        <!-- / SPINNER -->
+                        <template if:true={showingRecent}>
+                            <div class="slds-clearfix">
+                                <div class="slds-float_left slds-text-title slds-m-left_x-small">Recently Viewed</div>
+                                <div class="slds-float_right slds-m-right_x-small">
+                                    <button class="slds-button slds-button_icon" title="Close" onclick={handleDoneClick}>   
+                                        <lightning-icon icon-name="utility:close"
+                                        alternative-text="close"
+                                        size="xx-small" ></lightning-icon>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        <template if:false={showingRecent}>
+                            <div class="slds-clearfix">
+                                <div class="slds-float_left slds-text-title slds-m-left_x-small">Search Results</div>
+                                <div class="slds-float_right slds-m-right_x-small">
+                                    <button class="slds-button slds-button_icon" title="Close" onclick={handleDoneClick}>   
+                                        <lightning-icon icon-name="utility:close"
+                                        alternative-text="close"
+                                        size="xx-small" ></lightning-icon>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                            <thead>
+                                <tr>
+                                    <template for:each={fieldLabels} for:item="label">
+                                        <th scope="col" key={label}>
+                                            <div>{label}</div>
+                                        </th>
+                                    </template>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template iterator:itr={displayList}>
+                                    <tr key={itr.value.key} data-item={itr.index} onclick={handleSelect} class="handpointer">
+                                        <template iterator:fieldsitr={itr.value.value}>
+                                            <template if:true={fieldsitr.first}>          
+                                                <th scope="row" key={fieldsitr.value}>
+                                                    <div>
+                                                        <lightning-icon icon-name={iconName} size="small"></lightning-icon>
+                                                        <span data-item={itr.index} class={firstColumnClass} onmouseenter={showPopover} onmouseleave={hidePopover}>{fieldsitr.value}</span>
+                                                    </div>
+                                                </th>
+                                            </template>
+                                            <template if:false={fieldsitr.first}>   
+                                                <td key={fieldsitr.value} class="columnMaxWidth">
+                                                    <div class="slds-truncate" title={fieldsitr.value}>{fieldsitr.value}</div>
+                                                </td>
+                                            </template>
+                                        </template>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        <div class="slds-m-around_x-small slds-align_absolute-center">
+                            <lightning-button 
+                                variant="neutral" 
+                                label="Close" 
+                                title="Close"
+                                onclick={handleDoneClick} 
+                                class="slds-m-left_x-small">
+                            </lightning-button> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

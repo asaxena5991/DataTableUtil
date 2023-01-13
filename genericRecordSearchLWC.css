@@ -1,0 +1,13 @@
+.handpointer{
+    cursor:pointer;
+}
+.columnMaxWidth{
+    max-width:200px;
+}
+.pillSize100{
+    width:100%;
+}
+.hoverLink{
+    color: #006DCC;
+    border-bottom: 1px dotted;
+}
